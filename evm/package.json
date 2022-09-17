@@ -1,0 +1,33 @@
+{
+  "name": "zkpoaps",
+  "version": "1.0.0",
+  "description": "Zero Knowledge POAPs",
+  "main": "hardhat.config.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KaiStryker/zkPOAPs.git"
+  },
+  "keywords": [
+    "zero",
+    "knowledge",
+    "zkSNARKs",
+    "POAPs"
+  ],
+  "author": "Kai Stryker",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/KaiStryker/zkPOAPs/issues"
+  },
+  "homepage": "https://github.com/KaiStryker/zkPOAPs#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.7.3",
+    "erc721a": "^4.2.2",
+    "hardhat": "^2.11.2"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0"
+  }
+}
