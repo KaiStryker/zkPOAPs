@@ -17,7 +17,7 @@ import {
   State,
   state,
   CircuitValue,
-  PublicKey,
+  // PublicKey,
   UInt64,
   prop,
   Mina,
@@ -27,6 +27,7 @@ import {
 } from 'snarkyjs';
 
 import { BytesLike, ethers, Signature } from "ethers";
+import { generateURI, Metadata } from "./PinataAPI/pinToPinata"
 
 await isReady;
 
@@ -35,9 +36,9 @@ const doProofs = true;
 class MerkleWitness extends Experimental.MerkleWitness(8) {}
 
 class Account extends CircuitValue {
-  @prop publicKey: PublicKey;
+  @prop publicKey: string;
 
-  constructor(publicKey: PublicKey) {
+  constructor(publicKey: string) {
     super(publicKey);
     this.publicKey = publicKey;
   }
@@ -47,12 +48,13 @@ class Account extends CircuitValue {
   }
 }
 // we need the initiate tree root in order to tell the contract about our off-chain storage
-let initialCommitment: Field = Field.zero;
+// let initialCommitment: Field = Field.zero;
+// let initialIndex: bigint = 0n;
 
-class zkPOAP extends SmartContract {
+export class zkPOAP extends SmartContract {
   // a commitment is a cryptographic primitive that allows us to commit to data, with the ability to "reveal" it later
   @state(Field) commitment = State<Field>();
-  @state(Field) index = State<Field>();
+  @state(Field) index = State<bigint>();
 
   deploy(args: DeployArgs) {
     super.deploy(args);
@@ -61,7 +63,15 @@ class zkPOAP extends SmartContract {
       editState: Permissions.proofOrSignature(),
     });
     this.balance.addInPlace(UInt64.fromNumber(initialBalance));
+  }
+
+  @method init(initialCommitment: Field, initialIndex: bigint) {
+    // Se puede romper si el nullifier es de distinta longitud al nullifier original
     this.commitment.set(initialCommitment);
+    this.index.set(initialIndex);
+
+    console.log("commitment:",this.commitment)
+    console.log("index:", this.index)
   }
 
   @method
@@ -92,7 +102,7 @@ class zkPOAP extends SmartContract {
     let index = this.index.get();
     this.index.assertEquals(index);
 
-    let nullifierHash = Poseidon.hash([Field(poapId).add(index)])
+    let nullifierHash = Poseidon.hash([Field(poapId).add(Field(index))])
     
     let leaf = Poseidon.hash([nullifierHash, Poseidon.hash([poapId, account.hash()])])
 
@@ -100,16 +110,16 @@ class zkPOAP extends SmartContract {
     let newCommitment = path.calculateRoot(leaf);
 
     this.commitment.set(newCommitment);
-    this.index.set(index.add(1))
+    this.index.set(index + 1n)
 
     return nullifierHash;
   }
 }
 
-type Names = 'Bob' | 'Alice' | 'Charlie' | 'Olivia';
-
+/////// set up environment \\\\\\\
 let Local = Mina.LocalBlockchain();
 Mina.setActiveInstance(Local);
+
 let initialBalance = 10_000_000_000;
 
 let feePayer = Local.testAccounts[0].privateKey;
@@ -119,25 +129,28 @@ let zkappKey = PrivateKey.random();
 let zkappAddress = zkappKey.toPublicKey();
 
 // this map serves as our off-chain in-memory storage
-// let Accounts: Map<string, Account> = new Map<Names, Account>();
+// let Accounts: Map<string, Account> = new Map<string, Account>();
 
 let poapId = Field(Poseidon.hash([Field(235)]))
-let nullifierHash = Field(Poseidon.hash([Field(123)]))
 
 // let bob = new Account(Local.testAccounts[0].publicKey);
+let bobETH = new Account("0xa91472f9186E841d4541De71328f4559AC1d216e")
 // let alice = new Account(Local.testAccounts[1].publicKey);
+let aliceETH = new Account("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
 // let charlie = new Account(Local.testAccounts[2].publicKey);
+let charlieETH = new Account("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC")
 // let olivia = new Account(Local.testAccounts[3].publicKey);
+let oliviaETH = new Account("0x90F79bf6EB2c4f870365E785982E1f101E93b906")
 
-let com1 = Poseidon.hash([nullifierHash, Poseidon.hash([poapId, bob.hash()])])
-let com2 = Poseidon.hash([nullifierHash, Poseidon.hash([poapId, alice.hash()])])
-let com3 = Poseidon.hash([nullifierHash, Poseidon.hash([poapId, charlie.hash()])])
-let com4 = Poseidon.hash([nullifierHash, Poseidon.hash([poapId, olivia.hash()])])
+let nullifierHash1 = Field(Poseidon.hash([Field(113)]))
+let nullifierHash2 = Field(Poseidon.hash([Field(123)]))
+let nullifierHash3 = Field(Poseidon.hash([Field(133)]))
+let nullifierHash4 = Field(Poseidon.hash([Field(143)]))
 
-// Accounts.set('Bob', bob);
-// Accounts.set('Alice', alice);
-// Accounts.set('Charlie', charlie);
-// Accounts.set('Olivia', olivia);
+let com1 = Poseidon.hash([nullifierHash1, Poseidon.hash([poapId, bobETH.hash()])])
+let com2 = Poseidon.hash([nullifierHash2, Poseidon.hash([poapId, aliceETH.hash()])])
+let com3 = Poseidon.hash([nullifierHash3, Poseidon.hash([poapId, charlieETH.hash()])])
+let com4 = Poseidon.hash([nullifierHash4, Poseidon.hash([poapId, oliviaETH.hash()])])
 
 // we now need "wrap" the Merkle tree around our off-chain storage
 // we initialize a new Merkle Tree with height 8
@@ -149,7 +162,8 @@ Tree.setLeaf(2n, com3);
 Tree.setLeaf(3n, com4);
 
 // now that we got our accounts set up, we need the commitment to deploy our contract!
-initialCommitment = Tree.getRoot();
+let initialCommitment = Tree.getRoot();
+let initialIndex: bigint = 0n;
 
 let zkPOAPApp = new zkPOAP(zkappAddress);
 console.log('Deploying zkPOAPApp..');
@@ -159,24 +173,24 @@ if (doProofs) {
 let tx = await Mina.transaction(feePayer, () => {
   AccountUpdate.fundNewAccount(feePayer, { initialBalance });
   zkPOAPApp.deploy({ zkappKey });
+  zkPOAPApp.init(initialCommitment, initialIndex);
 });
 tx.send();
+/////// set up environment \\\\\\\
 
-async function checkAttendance(
+export async function checkAttendance(
   digest: BytesLike, 
   signature: Signature, 
   tokenId: bigint, 
   poapId: bigint, 
   nullifierHash: string,
-) {
-  let ethaddress = ethers.utils.recoverAddress(digest, signature)
-  
-  let account = Accounts.get(ethaddress)!;
+) : Promise<boolean> {
+  let ethAddress: Account = new Account(ethers.utils.recoverAddress(digest, signature))
   let w = Tree.getWitness(tokenId);
   let witness = new MerkleWitness(w);
 
   let tx = await Mina.transaction(feePayer, () => {
-    zkPOAPApp.proveAttendance(Field(nullifierHash), Field(poapId), account, witness);
+    zkPOAPApp.proveAttendance(Field(nullifierHash), Field(poapId), ethAddress, witness);
     if (!doProofs) zkPOAPApp.sign(zkappKey);
   });
 
@@ -184,24 +198,24 @@ async function checkAttendance(
     await tx.prove();
   }
   tx.send();
+  return true;
 }
 
-async function updateMerkle(
+export async function updateMerkle(
   digest: BytesLike, 
   signature: Signature, 
   poapId: bigint, 
-) {
-  let ethaddress = ethers.utils.recoverAddress(digest, signature)
-  let account = Accounts.get(ethaddress)!;
+) : Promise<[Field, string]> {
+  let ethAddress: Account = new Account(ethers.utils.recoverAddress(digest, signature))
 
-  let index = zkPOAPApp.index.get().toBigInt()
+  let index = zkPOAPApp.index.get()
 
   let w = Tree.getWitness(index);
   let witness = new MerkleWitness(w);
-  let nullifier: Field = Poseidon.hash([Field(poapId).add(Field(index))])
+  let nullifier_: Field = Poseidon.hash([Field(poapId).add(Field(index))])
 
   let tx = await Mina.transaction(feePayer, () => {
-    zkPOAPApp.updateRoot(Field(poapId), account, witness);
+    zkPOAPApp.updateRoot(Field(poapId), ethAddress, witness);
     if (!doProofs) zkPOAPApp.sign(zkappKey);
   });
 
@@ -211,9 +225,17 @@ async function updateMerkle(
   tx.send();
 
   // if the transaction was successful, we can update our off-chain storage as well
-  let leaf = Poseidon.hash([nullifier, Poseidon.hash([Field(poapId), account.hash()])])
+  let leaf = Poseidon.hash([nullifier_, Poseidon.hash([Field(poapId), ethAddress.hash()])])
   Tree.setLeaf(index, leaf);
   zkPOAPApp.commitment.get().assertEquals(Tree.getRoot());
-}
 
-export { checkAttendance, updateMerkle };
+  let zkPOAP: Metadata = {
+    filePath: process.env.filePath!,
+    description: process.env.description!,
+    name: process.env.name!,
+    nullifier: nullifier_.toString()
+  }
+  
+  let tokenURI: string = await generateURI(zkPOAP)
+  return [nullifier_, tokenURI]
+}

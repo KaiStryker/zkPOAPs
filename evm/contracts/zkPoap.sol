@@ -63,7 +63,7 @@ contract zkPOAPs is Ownable, AccessControl, ERC721URIStorage {
      * @param recipient The address that will receive the minted tokens.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mintToken(bytes32 nullifierHash, address recipient, string memory tokenURI_)
+    function mintPOAP(bytes32 nullifierHash, address recipient, string calldata tokenURI_)
     public returns(bool)
     {
         return _mintToken(nullifierHash, recipient, tokenURI_);
