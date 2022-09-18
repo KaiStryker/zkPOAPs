@@ -1,0 +1,14 @@
+.cleanWidgetContainer {
+    top: 0;
+    right: 0;
+    min-width: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cleanWidget { 
+    border-radius: 8px;
+    
+}
