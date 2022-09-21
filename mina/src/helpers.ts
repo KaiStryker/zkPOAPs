@@ -62,7 +62,7 @@ export function createLocalBlockchain(): PrivateKey {
 
 /////// set up environment \\\\\\\
 
-export async function createEnvironment() : Promise<[zkPOAP, PrivateKey, MerkleTree]> {
+export async function createEnvironment() : Promise<[zkPOAP, PrivateKey, MerkleTree, PrivateKey]> {
   let Local = Mina.LocalBlockchain();
   Mina.setActiveInstance(Local);
 
@@ -72,7 +72,7 @@ export async function createEnvironment() : Promise<[zkPOAP, PrivateKey, MerkleT
 
   // the zkapp account
   let zkappKey = PrivateKey.random();
-  let zkappAddress = zkappKey.toPublicKey();
+  let zkAppAddress = zkappKey.toPublicKey();
 
   // this map serves as our off-chain in-memory storage
   // let Accounts: Map<string, Account> = new Map<string, Account>();
@@ -111,7 +111,7 @@ export async function createEnvironment() : Promise<[zkPOAP, PrivateKey, MerkleT
   let initialCommitment = Tree.getRoot();
   let initialIndex: bigint = 0n;
 
-  let zkPOAPApp = new zkPOAP(zkappAddress);
+  let zkPOAPApp = new zkPOAP(zkAppAddress);
   console.log('Deploying zkPOAPApp..');
   if (doProofs) {
     await zkPOAP.compile();
@@ -123,5 +123,5 @@ export async function createEnvironment() : Promise<[zkPOAP, PrivateKey, MerkleT
   });
   tx.send();
 
-  return [zkPOAPApp, feePayer, Tree]
+  return [zkPOAPApp, feePayer, Tree, zkappKey]
 }

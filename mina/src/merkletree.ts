@@ -26,7 +26,8 @@ import {
   // AccountUpdate,
 } from 'snarkyjs';
 
-import { BytesLike, ethers, Signature } from "ethers";
+import { BytesLike, ethers } from "ethers";
+import { SignatureLike } from "@ethersproject/bytes";
 import { generateURI, Metadata } from "./PinataAPI/pinToPinata"
 import { MerkleTree } from 'snarkyjs/dist/node/lib/merkle_tree';
 
@@ -180,7 +181,7 @@ export class zkPOAP extends SmartContract {
 
 export async function checkAttendance(
   digest: BytesLike, 
-  signature: Signature, 
+  signature: SignatureLike, 
   tokenId: bigint, 
   poapId: bigint, 
   nullifierHash: string,
@@ -208,7 +209,7 @@ export async function checkAttendance(
 
 export async function updateMerkle(
   digest: BytesLike, 
-  signature: Signature, 
+  signature: SignatureLike, 
   poapId: bigint, 
   zkPOAPApp: zkPOAP,
   Tree: MerkleTree,

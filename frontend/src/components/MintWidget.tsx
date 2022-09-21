@@ -8,10 +8,14 @@ import Loading from 'react-loading'
 import JSConfetti from 'js-confetti'
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { mint } from "../../../evm/scripts/mintPOAP";
-import { updateMerkle } from "../../../mina/src/merkletree"
-import {createEnvironment } from "../../../mina/src/helpers"
-
+import { useSignMessage, useContract, useSigner } from "wagmi";
+import { updateMerkle } from "zkpoaps/src/merkletree";
+// import { updateMerkle } from "../mina/src/merkletree";
+import { createEnvironment } from "zkpoaps/src/helpers";
+// import { createEnvironment } from "../mina/src/helpers";
+import { BytesLike, verifyMessage } from "ethers/lib/utils";
+import { ContractInterface, ethers } from "ethers";
+// import { updateMerkle } from "mina"
 const EventListItem: React.FC<EventCardProps> = ({ event }) => {
   return (
     <>
@@ -42,7 +46,29 @@ export interface ClaimWidgetProps {
 }
 
 export const ClaimWidget: React.FC<ClaimWidgetProps> = ({ selectedEvents, onClaim }) => {
+  const { data: signer } = useSigner()
+  let recoveredAddress = React.useRef<string>();
+
+  const { data, variables, signMessage } = useSignMessage({
+    message: 'Claiming SOHO House POAP',
+    onSuccess(data, variables) {
+      const address = verifyMessage(variables.message, data)
+      recoveredAddress.current = address
+    },
+  })
+
   const [isClaiming, setIsClaiming] = React.useState(false);
+  
+  const poapInterface: ContractInterface = new ethers.utils.Interface([
+    "function mintPOAP(bytes32 nullifierHash, address recipient, string calldata tokenURI_) public returns(bool)",
+  ])
+  
+  const contract = useContract({
+    addressOrName: process.env.POAP!,
+    contractInterface: poapInterface,
+    signerOrProvider: signer,
+  })
+  // await contract.mint()
 
   // const getTotalBalance = () => {
   //   const totalBalance = selectedEvents.reduce((acc, token) => {
@@ -52,21 +78,39 @@ export const ClaimWidget: React.FC<ClaimWidgetProps> = ({ selectedEvents, onClai
   //   return parseFloat(totalBalance.toFixed(2));
   // };
 
-  const handleClaimPOAP = () => {
+  const handleClaimPOAP = async() => {
+
+    const [zkPOAPApp, feePayer, tree, zkAppKey] = await createEnvironment();
+    const poapId = 234n
     setIsClaiming(true);
+    signMessage();
 
+    const [nullifier, tokenURI] = await updateMerkle(
+      variables?.message as BytesLike, 
+      data!,
+      poapId,
+      zkPOAPApp,
+      tree,
+      feePayer,
+      zkAppKey,
+      true
+    )
 
-    setTimeout(() => {
-    
-      const jsConfetti = new JSConfetti()
-      jsConfetti.addConfetti({
-        emojis: ['🤠', '🧹', '✨', '🚀', '🔥'],
-        confettiNumber: 100,
-      })
-      toast.success("Wallet cleaned successfully!")
-      onClaim && onClaim();
-      setIsClaiming (false)
-    }, 2000);
+    await contract.mint(
+      nullifier.toString(), 
+      recoveredAddress.current!, 
+      tokenURI, 
+      // signer!
+    )
+
+    const jsConfetti = new JSConfetti()
+    jsConfetti.addConfetti({
+      emojis: ['🤠', '🧹', '✨', '🚀', '🔥'],
+      confettiNumber: 100,
+    })
+    toast.success("POAP privately claimed!")
+    onClaim && onClaim();
+    setIsClaiming (false)
   };
 
   return (
@@ -93,7 +137,7 @@ export const ClaimWidget: React.FC<ClaimWidgetProps> = ({ selectedEvents, onClai
           <ArrowDownCircleIcon />
         </div>
         <div className="w-full">
-          <Typography variant="subtitle1">Receiving</Typography>
+          <Typography variant="subtitle1">Claiming</Typography>
           <div className="w-full ">
             <EventListItem event={SOHOHousePOAP} />
           </div>

@@ -27,7 +27,7 @@ const sampleEventBalances = [
     event: {
       name: "DUMBO House - 9/18/2022 ",
       description: "Open Bar at DUMBO House",
-      logoURI: "https://cryptoicons.org/api/icon/usdc/200",
+      logoURI: "https://media.cntraveler.com/photos/5a8d7e89fe6fd1553e2425bc/16:9/w_2560,c_limit/SOHO-House_Roof-pool-(summer-4).jpg",
     },
     balance: 100,
   },
@@ -35,7 +35,7 @@ const sampleEventBalances = [
     event: {
       name: "SOHO House - 8/27/2022 ",
       description: "Live Jazz at SOHO House",
-      logoURI: "https://cryptoicons.org/api/icon/usdc/200",
+      logoURI: "https://media.cntraveler.com/photos/5a8d7e89fe6fd1553e2425bc/16:9/w_2560,c_limit/SOHO-House_Roof-pool-(summer-4).jpg",
     },
     balance: 35,
   },
@@ -43,7 +43,7 @@ const sampleEventBalances = [
     event: {
       name: "SOHO House - 12/31/2021 ",
       description: "NYE at SOHO House",
-      logoURI: "https://cryptoicons.org/api/icon/usdc/200",
+      logoURI: "https://media.cntraveler.com/photos/5a8d7e89fe6fd1553e2425bc/16:9/w_2560,c_limit/SOHO-House_Roof-pool-(summer-4).jpg",
     },
     balance: 3,
   },

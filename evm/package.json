@@ -23,11 +23,12 @@
   },
   "homepage": "https://github.com/KaiStryker/zkPOAPs#readme",
   "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "@openzeppelin/contracts": "^4.7.3",
     "erc721a": "^4.2.2",
     "hardhat": "^2.11.2"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.0"
+    "@types/debug": "^4.1.7"
   }
 }

@@ -5,7 +5,7 @@ dotenv.config();
 
 const zkPOAP: string = process.env.zkPOAP!
 
-export const mint = async (
+const mint = async (
     nullifier: string,
     recipient: string,
     tokenURI: string,
@@ -21,3 +21,5 @@ export const mint = async (
     
     return receipt;
 }
+
+export { mint }
